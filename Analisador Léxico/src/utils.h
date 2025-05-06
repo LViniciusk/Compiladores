@@ -1,3 +1,6 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <iostream>
 #include <stack>
 #include <vector>
@@ -7,17 +10,14 @@
 #include <set>
 #include <queue>
 #include <map>
-#include <sstream>
-#include <fstream>
 
-using namespace std;
 
 
 struct TOKEN{
-    string name;
-    string regex;
+    std::string name;
+    std::string regex;
 
-    TOKEN(string n, string r) : name(n), regex(r) {}
+    TOKEN(std::string n, std::string r) : name(n), regex(r) {}
 };
 
 
@@ -32,8 +32,8 @@ struct Trans{
 
 
 struct NFA{
-    vector<int> states;
-    vector<Trans> transitions;
+    std::vector<int> states;
+    std::vector<Trans> transitions;
     int finalState = 0;
 
     void setStateSize(int size){
@@ -46,8 +46,8 @@ struct NFA{
     void show(){
         for (Trans t : transitions)
         {
-            cout << "("<< t.fromState << ", " << t.symbol << ", "<< t.toState << ")" << endl;
-            cout << "Final state: " << finalState << endl;
+            std::cout << "("<< t.fromState << ", " << t.symbol << ", "<< t.toState << ")" << std::endl;
+            std::cout << "Final state: " << finalState << std::endl;
         }
         
     }
@@ -68,24 +68,24 @@ struct NFA{
 
 
 struct DFA {
-    vector<int> states;
-    vector<Trans> transitions;
-    set<int> finalStates;
+    std::vector<int> states;
+    std::vector<Trans> transitions;
+    std::set<int> finalStates;
 
     void show() {
         for (Trans t : transitions) {
-            cout << "(" << t.fromState << ", " << t.symbol << ", " << t.toState << ")\n";
+            std::cout << "(" << t.fromState << ", " << t.symbol << ", " << t.toState << ")\n";
         }
-        cout << "Final States: ";
-        for (int f : finalStates) cout << f << " ";
-        cout << endl;
+        std::cout << "Final States: ";
+        for (int f : finalStates) std::cout << f << " ";
+        std::cout << std::endl;
     }
 };
 
 
-set<int> epsilonClosure(const NFA& nfa, const set<int>& states) {
-    set<int> closure = states;
-    queue<int> q;
+std::set<int> epsilonClosure(const NFA& nfa, const std::set<int>& states) {
+    std::set<int> closure = states;
+    std::queue<int> q;
     for (int s : states) q.push(s);
 
     while (!q.empty()) {
@@ -103,8 +103,8 @@ set<int> epsilonClosure(const NFA& nfa, const set<int>& states) {
 }
 
 
-set<int> move(const NFA& nfa, const set<int>& states, char symbol) {
-    set<int> result;
+std::set<int> move(const NFA& nfa, const std::set<int>& states, char symbol) {
+    std::set<int> result;
     for (int s : states) {
         for (Trans t : nfa.transitions) {
             if (t.fromState == s && t.symbol == symbol) {
@@ -118,7 +118,7 @@ set<int> move(const NFA& nfa, const set<int>& states, char symbol) {
 
 DFA nfaToDFA(const NFA& nfa) {
     DFA dfa;
-    set<char> alphabet; 
+    std::set<char> alphabet; 
     
     // Coletar símbolos do alfabeto
     for (Trans t : nfa.transitions) {
@@ -128,9 +128,9 @@ DFA nfaToDFA(const NFA& nfa) {
     }
 
     // Estado inicial do DFA = epsilon-closure do estado inicial do NFA
-    set<int> startSet = epsilonClosure(nfa, {0});
-    map<set<int>, int> stateMapping;
-    queue<set<int>> unprocessedStates;
+    std::set<int> startSet = epsilonClosure(nfa, {0});
+    std::map<std::set<int>, int> stateMapping;
+    std::queue<std::set<int>> unprocessedStates;
 
     // Atribuir ID aos estados do DFA
     int stateId = 0;
@@ -144,11 +144,11 @@ DFA nfaToDFA(const NFA& nfa) {
 
     // Construir DFA
     while (!unprocessedStates.empty()) {
-        set<int> current = unprocessedStates.front();
+        std::set<int> current = unprocessedStates.front();
         unprocessedStates.pop();
 
         for (char c : alphabet) {
-            set<int> newState = epsilonClosure(nfa, move(nfa, current, c));
+            std::set<int> newState = epsilonClosure(nfa, move(nfa, current, c));
             
             if (!newState.empty()) {
                 if (!stateMapping.count(newState)) {
@@ -262,7 +262,7 @@ bool alpha(char c){
 }
 
 bool alphabet(char c){
-    return alpha(c) || c == '~' || c == '\"' || c == '+' || c == '=' || c == '-' || c == '/' || c == '>' || c == '<' || c == ';' || c == '\\';
+    return alpha(c) || c == '~' || c == '\"' || c == '+' || c == '=' || c == '-' || c == '/' || c == '>' || c == '<' || c == ';' || c == '\\' || c == '!' || c == '@' || c == '#' || c == '$' || c == '%' || c == '&' || c == '?' || c == '|';
 }
 
 bool alphanumeric(char c) {
@@ -282,7 +282,7 @@ bool validRegExChar(char c){
     return alphabet(c) || regexOperator(c) || alphanumeric(c);
 }
 
-bool validRegex(string regex){
+bool validRegex(std::string regex){
     if(regex.empty()) return false;
 
     for (char c : regex)
@@ -294,7 +294,7 @@ bool validRegex(string regex){
     
 }
 
-bool validString(DFA dfa, string input){
+bool validString(DFA dfa, std::string input){
     int curState = 0;
 
     for(char c : input){
@@ -316,7 +316,7 @@ bool validString(DFA dfa, string input){
 
 }
 
-pair<int, int> ProcessQuantifier(string regex, int& i) {
+std::pair<int, int> ProcessQuantifier(std::string regex, int& i) {
     i++; // Pula '{'
     int m = 0, n = 0;
     
@@ -326,7 +326,7 @@ pair<int, int> ProcessQuantifier(string regex, int& i) {
         i++;
     }
     
-    if (regex[i] != ',') throw runtime_error("Formato inválido do quantificador");
+    if (regex[i] != ',') throw std::runtime_error("Formato inválido do quantificador");
     i++; // Pula ','
     
     // Extrai n
@@ -335,7 +335,7 @@ pair<int, int> ProcessQuantifier(string regex, int& i) {
         i++;
     }
     
-    if (regex[i] != '}') throw runtime_error("Formato inválido do quantificador");
+    if (regex[i] != '}') throw std::runtime_error("Formato inválido do quantificador");
     i++; // Pula '}'
     
     return {m, n};
@@ -343,7 +343,7 @@ pair<int, int> ProcessQuantifier(string regex, int& i) {
 
 
 NFA applyQuantifier(NFA elem, int m, int n) {
-    if (m < 0 || n < m) throw runtime_error("Intervalo inválido no quantificador");
+    if (m < 0 || n < m) throw std::runtime_error("Intervalo inválido no quantificador");
     
     NFA result('~'); // Começa com épsilon
     
@@ -362,12 +362,12 @@ NFA applyQuantifier(NFA elem, int m, int n) {
 }
 
 
-NFA ProcessCharClass(string regex, int& pos) {
+NFA ProcessCharClass(std::string regex, int& pos) {
     NFA result;
     result.setStateSize(2); 
     result.finalState = 1;
     bool isNegative = false;
-    unordered_set<char> allowedChars, allChars;
+    std::unordered_set<char> allowedChars, allChars;
 
     pos++; // Pula o '['
     if (regex[pos] == '^') {
@@ -413,15 +413,15 @@ NFA ProcessCharClass(string regex, int& pos) {
 }
 
 
-NFA compile(string regex) {
+NFA compile(std::string regex) {
     if (!validRegex(regex)) {
-        cout << "Expressão Regular invalida" << endl;
+        std::cout << "Expressão Regular invalida" << std::endl;
         return NFA(0);
     }
 
-    stack<char> operators;
-    stack<NFA> operands;
-    stack<NFA> concat_stack;
+    std::stack<char> operators;
+    std::stack<NFA> operands;
+    std::stack<NFA> concat_stack;
     bool ccflag = false; 
     char op, c;
     int parentese_count = 0;
@@ -434,7 +434,7 @@ NFA compile(string regex) {
             if (c == '\\') {
                 i++; // Pula o caractere de escape
                 if(i >= (int)regex.size()) {
-                    throw runtime_error("Erro: Caractere de escape sem caractere seguinte");
+                    throw std::runtime_error("Erro: Caractere de escape sem caractere seguinte");
                 }
                 c = regex[i];
             }
@@ -448,14 +448,14 @@ NFA compile(string regex) {
                 }
 
             } else {
-                throw runtime_error("Erro: Caractere inválido");
+                throw std::runtime_error("Erro: Caractere inválido");
             }
             
         } else {
             if (c == ')') {
                 ccflag = true; // Alterado para true após processar ')'
                 if (parentese_count == 0) {
-                    throw runtime_error("Erro: Parênteses não balanceados");
+                    throw std::runtime_error("Erro: Parênteses não balanceados");
                 } else {
                     parentese_count--;
 
@@ -526,7 +526,7 @@ NFA compile(string regex) {
             }
             else if (c == '{') {
                 // Processa quantificador {m,n}
-                pair<int, int> quant = ProcessQuantifier(regex, i);
+                std::pair<int, int> quant = ProcessQuantifier(regex, i);
                 int m = quant.first;
                 int n = quant.second;
                 
@@ -538,7 +538,7 @@ NFA compile(string regex) {
                 i--; // Ajusta o índice após ProcessQuantifier
             }
             else {
-                throw runtime_error("Erro: Caractere inválido");
+                throw std::runtime_error("Erro: Caractere inválido");
             }
         }
     }
@@ -548,28 +548,28 @@ NFA compile(string regex) {
         op = operators.top();
         operators.pop();
         if (op == '.') {
-            if (operands.size() < 2) throw runtime_error("Operandos insuficientes");
+            if (operands.size() < 2) throw std::runtime_error("Operandos insuficientes");
             nfa2 = operands.top(); operands.pop();
             nfa1 = operands.top(); operands.pop();
             operands.push(concat(nfa1, nfa2));
         } else if (op == '|') {
-            if (operands.size() < 2) throw runtime_error("Operandos insuficientes");
+            if (operands.size() < 2) throw std::runtime_error("Operandos insuficientes");
             nfa2 = operands.top(); operands.pop();
             nfa1 = operands.top(); operands.pop();
             operands.push(join(nfa1, nfa2));
         }
     }
 
-    if (operands.size() != 1) throw runtime_error("Expressão mal formada");
+    if (operands.size() != 1) throw std::runtime_error("Expressão mal formada");
     return operands.top();
 }
 
 
-string lexer(string code) {
-    string result = "";
+std::string lexer(std::string code) {
+    std::string result = "";
     size_t pos = 0;
 
-    vector<TOKEN> tokens = {
+    std::vector<TOKEN> tokens = {
         {"SHOW",       "show"},
         {"INT",        "int"},
         {"TEXT",       "text"},
@@ -591,7 +591,7 @@ string lexer(string code) {
     
 
     // Compila cada token para um DFA
-    vector<DFA> dfas;
+    std::vector<DFA> dfas;
     for (TOKEN t : tokens) {
         NFA nfa = compile(t.regex);
         DFA dfa = nfaToDFA(nfa);
@@ -604,15 +604,15 @@ string lexer(string code) {
             continue;
         }
 
-        string longestMatch = "";
-        string tokenType = "";
+        std::string longestMatch = "";
+        std::string tokenType = "";
         size_t bestTokenIdx = 0;
 
         // Verifica todos os tokens possíveis
         for (size_t i = 0; i < tokens.size(); i++) {
             size_t currentPos = pos;
-            string currentLexName = "";
-            string bestForThisToken = "";
+            std::string currentLexName = "";
+            std::string bestForThisToken = "";
 
             while (currentPos < code.size()) {
                 currentLexName += code[currentPos];
@@ -650,62 +650,4 @@ string lexer(string code) {
     return result;
 }
 
-int main(){
-/*
-    vector<TOKEN> tokens = {
-        {"SHOW",       "show"},
-        {"INT",        "num"},
-        {"TEXT",       "text"},
-        {"TRUE",       "true"},
-        {"FALSE",      "false"},
-        {"ADD",        "+"},
-        {"SUB",        "-"},
-        {"MUL",        "*"},
-        {"DIV",        "/"},
-        {"GT",         ">"},
-        {"LT",         "<"},
-        {"EQ",         "="},
-        {"SEMICOLON",  ";"},
-        {"NUM",        "[0-9]"},
-        {"CONST",      "\"([^\"]*)\""},    
-        {"VAR",        "[a-zA-Z_][a-zA-Z0-9_]{0,29}"}
-    };
-
-
-    NFA result('~');
-
-    for (TOKEN t : tokens)
-    {
-        NFA nfa = compile(t.regex);
-        result = join(result, nfa);
-        cout << t.name << ": " << t.regex << endl;
-    }
-    DFA dfa = nfaToDFA(result);
-    cout << "DFA: " << endl;
-    dfa.show();
-*/
-
-
-    string code = "";
-
-    ifstream arquivo("codigo.txt");
-    
-    if (!arquivo) {
-        cerr << "Erro ao abrir o arquivo!" << endl;
-        return 1;
-    }
-
-    char c;
-    
-    while (arquivo.get(c)) {
-        code += c;
-    }
-
-    arquivo.close();
-
-
-    cout << lexer(code) << endl;
-
-
-    return 0;
-}
+#endif

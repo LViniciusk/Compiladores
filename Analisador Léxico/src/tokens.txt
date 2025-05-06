@@ -1,0 +1,19 @@
+Token	                        Expressão Regular                                                                            Descrição
+
+
+SHOW                                   show	                                                                     Palavra-chave para a instrução de saída.
+INT	                                   int                                                                       Palavra-chave para declarar variável do tipo inteiro.
+TEXT	                               text	                                                                     Palavra-chave para declarar variável do tipo string.
+TRUE	                               true	                                                                     Valor booleano verdadeiro.
+FALSE	                               false                                                                     Valor booleano falso.
+ADD	                                    \\+	                                                                     Operador de adição.
+SUB	                                     -	                                                                     Operador de subtração.
+MUL	                                    \\*	                                                                     Operador de multiplicação.
+DIV	                                     /	                                                                     Operador de divisão.
+GT	                                     >	                                                                     Operador de comparação "maior que".
+LT	                                     <	                                                                     Operador de comparação "menor que".
+EQ	                                     =	                                                                     Operador de atribuição.
+SEMICOLON	                             ;	                                                                     Delimitador de fim de instrução.
+NUM	                        [0-9][0-9]*[\\+\\-\\*/><=]{0,1}	                                                     Literal numérico (inteiro).
+CONST	                            \"([^\"]*)\"	                                                             Literal de string (conteúdo entre aspas).
+VAR	                [a-zA-Z_][a-zA-Z0-9_]{0,29}[\\+\\-\\*/><=]{0,1}                                              Nome de variável (até 30 caracteres).
