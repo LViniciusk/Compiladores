@@ -269,11 +269,6 @@ bool alphanumeric(char c) {
     return alphabet(c) || (c >= '0' && c <= '9'); 
 }
 
-bool validDelimiter(char c) {
-    return isspace(c) || c == ';' || c == '+' || c == '-' || c == '*' ||
-           c == '/' || c == '>' || c == '<' || c == '=' || c == '(' || c == ')' || c == '\0';
-}
-
 bool regexOperator(char c){
     return c == '(' || c == ')' || c == '*' || c == '|' || c=='^'  || c == '-' || c == '[' || c == ']' || c == '{' || c == '}' || c == ',';
 }
@@ -583,9 +578,9 @@ std::string lexer(std::string code) {
         {"LT",         "<"},
         {"EQ",         "="},
         {"SEMICOLON",  ";"},
-        {"NUM",        "[0-9][0-9]*[\\+\\-\\*/><=]{0,1}"},
+        {"NUM",        "[0-9][0-9]*"},
         {"CONST",      "\"([^\"]*)\""},    
-        {"VAR",        "[a-zA-Z_][a-zA-Z0-9_]{0,29}[\\+\\-\\*/><=]{0,1}"}
+        {"VAR",        "[a-zA-Z_][a-zA-Z0-9_]{0,29}"}
     };
 
     
@@ -633,12 +628,6 @@ std::string lexer(std::string code) {
 
         if (longestMatch.empty()) {
             return "Erro: Token inválido em '" + code.substr(pos, 10) + "'";
-        }
-
-        // Verifica delimitadores após o token
-        size_t nextPos = pos + longestMatch.size();
-        if (nextPos < code.size() && !validDelimiter(code[nextPos])) {
-            return "Erro: Delimitador inválido após '" + longestMatch + "'";
         }
 
          
