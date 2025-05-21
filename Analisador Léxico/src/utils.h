@@ -390,7 +390,9 @@ NFA ProcessCharClass(std::string regex, int& pos) {
     }
 
     if(isNegative){
-        allChars.insert('_'); 
+        allChars.insert('_'); allChars.insert('!'); allChars.insert('@'); allChars.insert('#'); allChars.insert('$');
+        allChars.insert('%'); allChars.insert('&'); allChars.insert('?'); allChars.insert('/'); allChars.insert('|');
+        allChars.insert('~'); allChars.insert(' ');
         for (char c = 'a'; c <= 'z'; c++) { allChars.insert(c); }
         for (char c = 'A'; c <= 'Z'; c++) { allChars.insert(c); }
         for (char c = '0'; c <= '9'; c++) { allChars.insert(c); }

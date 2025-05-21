@@ -1,3 +1,21 @@
-int a = 0;
-int b = 5 + 5;
-text c = "teSte";
+int x = 10;
+text y = "hello";
+
+;;
+
+show x;
+show y;
+
+;;
+
+show 2>2;
+int a = 5;
+text mensagem = "Oi!";
+show mensagem;
+show a;
+
+;;
+
+int a = 0 ;
+int b = 5 + a ;
+text c = "teSte" ;
