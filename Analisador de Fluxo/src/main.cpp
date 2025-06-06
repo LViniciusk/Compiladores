@@ -8,7 +8,6 @@
 #include <fstream>
 
 
-
 std::string trim(const std::string& s) {
     const auto start = s.find_first_not_of(" \t");
     const auto end = s.find_last_not_of(" \t");
@@ -81,10 +80,16 @@ struct BasicBlock {
     std::set<std::string> out_live;
 
     // definições alcançantes
-    std::set<std::string> gen;
-    std::set<std::string> kill;
+    std::set<std::string> gen_reach;
+    std::set<std::string> kill_reach;
     std::set<std::string> in_reach;
     std::set<std::string> out_reach;
+
+    // Expressões disponíveis
+    std::set<std::string> gen_avail;
+    std::set<std::string> kill_avail;
+    std::set<std::string> in_avail;
+    std::set<std::string> out_avail;
 
     BasicBlock() : id(-1) {}
     BasicBlock(int i) : id(i) {}
@@ -128,6 +133,7 @@ void read(const std::string& filename, std::map<int, BasicBlock>& CFG) {
     
     for (auto& [id, block] : CFG) {
         for (int succ : block.successors) {
+            if (succ == 1) continue; 
             CFG[succ].predecessors.insert(id);
         }
     }
@@ -152,7 +158,7 @@ void fillUseDef(std::map<int, BasicBlock>& CFG) {
     }
 }
 
-void fillGenKill(std::map<int, BasicBlock>& CFG) {
+void fillGenKillReach(std::map<int, BasicBlock>& CFG) {
     std::map<std::string, std::set<int>> def_blocks;
 
     // armazena todos os blocos que definem cada variavel, ["t1"] = {1,2} significa que a variavel t1 é definida nesses dois blocos
@@ -165,17 +171,78 @@ void fillGenKill(std::map<int, BasicBlock>& CFG) {
     }
 
     for (auto& [id, block] : CFG) {
-        block.gen.clear();
-        block.kill.clear();
+        block.gen_reach.clear();
+        block.kill_reach.clear();
         for (const auto& instr : block.instructions) {
             if (!instr.var_def.empty()) {
                 // gen é o conjunto de definições que são geradas neste bloco
-                block.gen.insert(instr.var_def + "[" + std::to_string(id) + "]");
+                block.gen_reach.insert(instr.var_def + "[" + std::to_string(id) + "]");
                 for (int other : def_blocks[instr.var_def]) {
                     if (other != id) {
-                        // kill é o conjunto dessa mesma definição gerada em outros blocos (a definição atual mata elas)
-                        block.kill.insert(instr.var_def + "[" + std::to_string(other) + "]");
+                        // kill é o conjunto dessa mesma definição gerada em outros blocos (a definição atual mata as outras)
+                        block.kill_reach.insert(instr.var_def + "[" + std::to_string(other) + "]");
                     }
+                }
+            }
+        }
+    }
+}
+
+void fillGenKillAvail(std::map<int, BasicBlock>& CFG) {
+    std::set<std::string> all_exprs;
+
+    // coleta todas as expressões possíveis do programa
+    for (const auto& [id, block] : CFG) {
+        for (const auto& instr : block.instructions) {
+            auto eq_pos = instr.text.find('=');
+            if (eq_pos != std::string::npos && !isComparator(instr.text)) {
+                std::string rhs = trim(instr.text.substr(eq_pos + 1));
+                std::istringstream iss(rhs);
+                std::string y, op, z;
+                iss >> y >> op >> z;
+                if (!op.empty() && !z.empty()) {
+                    std::string expr = y + " " + op + " " + z;
+                    all_exprs.insert(expr);
+                }
+            }
+        }
+    }
+
+    for (auto& [id, block] : CFG) {
+        block.gen_avail.clear();
+        block.kill_avail.clear();
+
+        std::set<std::string> gen;
+
+        // gen é o conjunto de expressões computadas no bloco e não "mortas" antes de serem usadas
+        for (const auto& instr : block.instructions) {
+            auto eq_pos = instr.text.find('=');
+            if (eq_pos != std::string::npos && !isComparator(instr.text)) {
+                std::string lhs = trim(instr.text.substr(0, eq_pos));
+                std::string rhs = trim(instr.text.substr(eq_pos + 1));
+                std::istringstream iss(rhs);
+                std::string y, op, z;
+                iss >> y >> op >> z;
+                if (!op.empty() && !z.empty()) {
+                    std::string expr = y + " " + op + " " + z;
+                    // remove do GEN qualquer expressão que use a variável definida
+                    for (auto it = gen.begin(); it != gen.end(); ) {
+                        if (it->find(lhs) != std::string::npos)
+                            it = gen.erase(it);
+                        else
+                            ++it;
+                    }
+                    gen.insert(expr);
+                }
+            }
+        }
+        block.gen_avail = gen;
+
+        // kill é o conjunto de todas as expressões que usam variáveis definidas no bloco e não estão em GEN
+        for (const auto& expr : all_exprs) {
+            for (const auto& def : block.def) {
+                if (expr.find(def) != std::string::npos && block.gen_avail.find(expr) == block.gen_avail.end()) {
+                    block.kill_avail.insert(expr);
                 }
             }
         }
@@ -218,20 +285,67 @@ void reachingDefinitions(std::map<int, BasicBlock>& CFG) {
             std::set<std::string> old_out = block.out_reach;
 
             // OUT = GEN ∪ (IN - KILL)
-            block.out_reach = block.gen;
+            block.out_reach = block.gen_reach;
             for (const auto& def : block.in_reach) {
-                if (block.kill.find(def) == block.kill.end()) {
+                if (block.kill_reach.find(def) == block.kill_reach.end()) {
                     block.out_reach.insert(def);
                 }
             }
 
             // IN = união dos OUT dos predecessores
-            block.in_reach.clear();
-            for (int pred : block.predecessors) {
-                block.in_reach.insert(CFG[pred].out_reach.begin(), CFG[pred].out_reach.end());
+            if (id == 1) block.in_reach.clear();
+            else {
+                block.in_reach.clear();
+                for (int pred : block.predecessors) {
+                    block.in_reach.insert(CFG[pred].out_reach.begin(), CFG[pred].out_reach.end());
+                }
             }
 
             if (block.in_reach != old_in || block.out_reach != old_out)
+                changed = true;
+        }
+    } while (changed);
+}
+
+void availableExpressions(std::map<int, BasicBlock>& CFG) {
+    bool changed;
+    do {
+        changed = false;
+        for (auto& [id, block] : CFG) {
+            std::set<std::string> old_in = block.in_avail;
+            std::set<std::string> old_out = block.out_avail;
+
+            // IN = interseção dos OUT dos predecessores
+            if (id == 1) {
+                block.in_avail.clear();
+            } else {
+                block.in_avail.clear();
+                bool first = true;
+                for (int pred : block.predecessors) {
+                    if (first) {
+                        block.in_avail = CFG[pred].out_avail;
+                        first = false;
+                    } else {
+                        std::set<std::string> temp;
+                        std::set_intersection(
+                            block.in_avail.begin(), block.in_avail.end(),
+                            CFG[pred].out_avail.begin(), CFG[pred].out_avail.end(),
+                            std::inserter(temp, temp.begin())
+                        );
+                        block.in_avail = temp;
+                    }
+                }
+            }
+
+            // OUT = GEN ∪ (IN - KILL)
+            block.out_avail = block.gen_avail;
+            for (const auto& expr : block.in_avail) {
+                if (block.kill_avail.find(expr) == block.kill_avail.end()) {
+                    block.out_avail.insert(expr);
+                }
+            }
+
+            if (block.in_avail != old_in || block.out_avail != old_out)
                 changed = true;
         }
     } while (changed);
@@ -252,12 +366,20 @@ void printCFG(std::map<int, BasicBlock> CFG){
         for (const auto& v : block.def) {
             std::cout << v << " ";
         }
-        std::cout << "\n  Gen: ";
-        for (const auto& v : block.gen) {
+        std::cout << "\n  Gen Reach: ";
+        for (const auto& v : block.gen_reach) {
             std::cout << v << " ";
         }
-        std::cout << "\n  Kill: ";
-        for (const auto& v : block.kill) {
+        std::cout << "\n  Kill Reach: ";
+        for (const auto& v : block.kill_reach) {
+            std::cout << v << " ";
+        }
+        std::cout << "\n  Gen Avail: ";
+        for (const auto& v : block.gen_avail) {
+            std::cout << v << " ";
+        }
+        std::cout << "\n  Kill Avail: ";
+        for (const auto& v : block.kill_avail) {
             std::cout << v << " ";
         }
         std::cout << "\n  In Live: ";
@@ -274,6 +396,14 @@ void printCFG(std::map<int, BasicBlock> CFG){
         }
         std::cout << "\n  Out Reach: ";
         for (const auto& v : block.out_reach) {
+            std::cout << v << " ";
+        }
+        std::cout << "\n  In Avail: ";
+        for (const auto& v : block.in_avail) {
+            std::cout << v << " ";
+        }
+        std::cout << "\n  Out Avail: ";
+        for (const auto& v : block.out_avail) {
             std::cout << v << " ";
         }
 
@@ -307,6 +437,7 @@ void printInOut(std::map<int, BasicBlock>& CFG) {
     }
 }
 
+
 int main(){
 
     std::map<int, BasicBlock> CFG;
@@ -314,9 +445,11 @@ int main(){
     read("exemplos/codigo.txt", CFG);
 
     fillUseDef(CFG);
-    fillGenKill(CFG);
+    fillGenKillReach(CFG);
+    fillGenKillAvail(CFG);
     liveness(CFG);
     reachingDefinitions(CFG);
+    availableExpressions(CFG);
     printCFG(CFG);
 
     return 0;
