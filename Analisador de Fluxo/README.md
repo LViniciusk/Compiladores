@@ -12,7 +12,6 @@ Um **analisador de fluxo de dados** examina o código-fonte para determinar como
 
 ## 📂 Estrutura do Projeto
 
-- `main.exe` — Executável principal que realiza a análise de fluxo.
 - `src/` — Diretório com os arquivos-fonte do projeto.
 - `exemplos/` — Contém exemplos de códigos de três endereços para análise.
 - `README.md` — Este arquivo com instruções de uso.
@@ -21,7 +20,13 @@ Um **analisador de fluxo de dados** examina o código-fonte para determinar como
 
 ## ⚙️ Modo de Uso
 
-Para utilizar o analisador de fluxo, execute o arquivo `main.exe` passando como argumento o caminho para o arquivo de código-fonte em LangB:
+Para Compilar o analisador de fluxo, execute o comando:
+```bash
+g++ ./src/main.cpp -o main.exe
+```
+
+Para utilizar o analisador de fluxo, execute o arquivo `main.exe` passando como argumento o caminho para o arquivo de código-fonte:
 
 ```bash
 main.exe caminho/do/codigo.txt
+```

@@ -12,7 +12,6 @@ Um **analisador léxico** (ou *lexer*) é responsável por ler o código-fonte e
 
 ## 📂 Estrutura do Projeto
 
-- `main.exe` — Executável principal que realiza a análise léxica.
 - `src/` — Diretório com os arquivos-fonte do projeto.
 - `exemplos/` — Contém exemplos de códigos em LangB que podem ser analisados.
 - `README.md` — Este arquivo com instruções de uso.
@@ -23,5 +22,11 @@ Um **analisador léxico** (ou *lexer*) é responsável por ler o código-fonte e
 
 Para utilizar o analisador léxico, execute o arquivo `main.exe` passando como argumento o caminho para o arquivo de código-fonte em LangB:
 
+Para Compilar o analisador de fluxo, execute o comando:
+```bash
+g++ ./src/main.cpp -o main.exe
+```
+
 ```bash
 main.exe caminho/do/codigo.txt
+```
