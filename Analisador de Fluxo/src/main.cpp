@@ -17,10 +17,11 @@ int main(int argc, char* argv[]){
     fillUseDef(CFG);
     fillGenKillReach(CFG);
     fillGenKillAvail(CFG);
-    liveness(CFG);
+    liveVariables(CFG);
     reachingDefinitions(CFG);
     availableExpressions(CFG);
     printCFG(CFG);
+
 
     return 0;
 }
